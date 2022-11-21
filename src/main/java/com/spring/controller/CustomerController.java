@@ -31,7 +31,7 @@ public class CustomerController {
 	Logger LOGGER = LoggerFactory.getLogger(CustomerController.class);
 	
 	@PostMapping(value = "/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody ResponseEntity<Customer> saveCustomers(@RequestParam(value = "files") MultipartFile[] files) throws Exception{
+	public @ResponseBody ResponseEntity<?> saveCustomers(@RequestParam(value = "files") MultipartFile[] files) throws Exception{
 		LOGGER.info("CustomerController.saveCustomers by thread {}", Thread.currentThread().getName());
 		for (MultipartFile file:files) {
 			service.saveAll(file);
@@ -51,6 +51,18 @@ public class CustomerController {
 		LOGGER.info("CustomerController.getAllCustomersNonAsync by thread {}", Thread.currentThread().getName());
 		System.out.println(service.findAllCustomersNonAsync().get(0));
 		return service.findAllCustomersNonAsync();
+	}
+	
+	@GetMapping(value = "/checkAllThread", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> getCustomers(){
+		CompletableFuture<List<Customer>> customer_list1 =  service.findAllCustomers();
+		CompletableFuture<List<Customer>> customer_list2 =  service.findAllCustomers();
+		CompletableFuture<List<Customer>> customer_list3 =  service.findAllCustomers();
+		
+		CompletableFuture.allOf(customer_list1, customer_list2, customer_list3).join();
+		
+		return ResponseEntity.status(HttpStatus.OK).build();
+		
 	}
 	
 	private Function<Throwable, ResponseEntity<List<Customer>>> handleGetCarFailure = throwable -> {
